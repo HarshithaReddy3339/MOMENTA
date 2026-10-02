@@ -1,0 +1,7 @@
+{
+  "name": "MOMENTA — Personalized Event Planning",
+  "description": "MOMENTA transforms your event vision into a thoughtfully planned, seamlessly coordinated experience with curated services and vendors.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
