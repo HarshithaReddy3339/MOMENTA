@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavigationPage, EventPlan, Vendor } from './types';
-import { Navbar } from './components/navigation/Navbar';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { Sidebar } from './components/navigation/Sidebar';
 import { Footer } from './components/navigation/Footer';
 import { HeroSection } from './components/home/HeroSection';
 import { WhatMomentaDoes } from './components/home/WhatMomentaDoes';
@@ -11,89 +12,193 @@ import { PlanYourEventPage } from './components/plan/PlanYourEventPage';
 import { VendorsSection } from './components/vendors/VendorsSection';
 import { AboutPage } from './components/about/AboutPage';
 import { ContactPage } from './components/contact/ContactPage';
+import { LoginPage } from './components/auth/LoginPage';
+import { SignUpPage } from './components/auth/SignUpPage';
+import { UserDashboard } from './components/dashboard/UserDashboard';
 
-export default function App() {
-  const [currentPage, setCurrentPage] = useState<NavigationPage>('home');
+function AppContent() {
+  const { user, profile, loading, logout } = useAuth();
+  
+  // Resolve initial page from URL path if applicable
+  const getInitialPage = (): NavigationPage => {
+    const path = window.location.pathname.replace(/^\//, '').toLowerCase();
+    if (path === 'login') return 'login';
+    if (path === 'signup') return 'signup';
+    if (path === 'dashboard') return 'dashboard';
+    if (path === 'services') return 'services';
+    if (path === 'how-it-works') return 'how-it-works';
+    if (path === 'plan' || path === 'plan-your-event') return 'plan';
+    if (path === 'vendors') return 'vendors';
+    if (path === 'about') return 'about';
+    if (path === 'contact') return 'contact';
+    return 'home';
+  };
+
+  const [currentPage, setCurrentPage] = useState<NavigationPage>(getInitialPage);
   const [activePlan, setActivePlan] = useState<EventPlan | null>(null);
   const [selectedVendorForEnquiry, setSelectedVendorForEnquiry] = useState<Vendor | null>(null);
+  const [loginSuccessMessage, setLoginSuccessMessage] = useState<string | null>(null);
 
-  const handleNavigate = (page: NavigationPage) => {
+  // Sync with browser back/forward buttons
+  useEffect(() => {
+    const handlePopState = () => {
+      setCurrentPage(getInitialPage());
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Protected route enforcement for /dashboard
+  useEffect(() => {
+    if (!loading && !user && currentPage === 'dashboard') {
+      handleNavigate('login');
+    }
+  }, [user, loading, currentPage]);
+
+  const handleNavigate = (page: NavigationPage, message?: string) => {
+    if (message) {
+      setLoginSuccessMessage(message);
+    } else if (page !== 'login') {
+      setLoginSuccessMessage(null);
+    }
+
     setCurrentPage(page);
+    const pathMap: Record<NavigationPage, string> = {
+      home: '/',
+      services: '/services',
+      plan: '/plan-your-event',
+      'how-it-works': '/how-it-works',
+      vendors: '/vendors',
+      about: '/about',
+      contact: '/contact',
+      dashboard: '/dashboard',
+      login: '/login',
+      signup: '/signup',
+    };
+    const targetUrl = pathMap[page] || (page === 'home' ? '/' : `/${page}`);
+    if (window.location.pathname !== targetUrl) {
+      window.history.pushState(null, '', targetUrl);
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    handleNavigate('login');
   };
 
   const handleEnquireWithPlan = (plan: EventPlan) => {
     setActivePlan(plan);
     setSelectedVendorForEnquiry(null);
-    setCurrentPage('contact');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    handleNavigate('contact');
   };
 
   const handleSelectVendorForEnquiry = (vendor: Vendor) => {
     setSelectedVendorForEnquiry(vendor);
     setActivePlan(null);
-    setCurrentPage('contact');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    handleNavigate('contact');
   };
 
+  const currentUserData = user ? {
+    name: profile?.name || user.displayName || user.email?.split('@')[0] || 'Member',
+    email: user.email || ''
+  } : null;
+
   return (
-    <div className="min-h-screen flex flex-col bg-[#FAF7F2] text-[#27211E]">
-      {/* Sticky Elegant Navbar */}
-      <Navbar currentPage={currentPage} onNavigate={handleNavigate} />
+    <div className="min-h-screen bg-[#FAF7F2] text-[#27211E] flex flex-col">
+      {/* Vertical Navigation Sidebar attached to far left edge */}
+      <Sidebar
+        currentPage={currentPage}
+        onNavigate={(p) => handleNavigate(p)}
+        currentUser={currentUserData}
+        onLogout={handleLogout}
+      />
 
-      {/* Main Page Content */}
-      <main className="flex-1">
-        {currentPage === 'home' && (
-          <div>
-            <HeroSection onNavigate={handleNavigate} />
-            <WhatMomentaDoes onNavigate={handleNavigate} />
-            <HowItWorksSection onNavigate={handleNavigate} />
-            <VendorsSection 
-              onNavigate={handleNavigate} 
-              onSelectVendorForEnquiry={handleSelectVendorForEnquiry}
+      {/* Main Content Area (positioned strictly to the right of the left sidebar) */}
+      <div className="flex-1 flex flex-col min-w-0 lg:pl-64 xl:pl-72">
+        <main className="flex-1">
+          {currentPage === 'home' && (
+            <div>
+              <HeroSection onNavigate={(p) => handleNavigate(p)} />
+              <WhatMomentaDoes onNavigate={(p) => handleNavigate(p)} />
+              <HowItWorksSection onNavigate={(p) => handleNavigate(p)} />
+              <VendorsSection 
+                onNavigate={(p) => handleNavigate(p)} 
+                onSelectVendorForEnquiry={handleSelectVendorForEnquiry}
+              />
+              <CuratedMomentsSection onNavigate={(p) => handleNavigate(p)} />
+            </div>
+          )}
+
+          {currentPage === 'services' && (
+            <ServicesPage onNavigate={(p) => handleNavigate(p)} />
+          )}
+
+          {currentPage === 'how-it-works' && (
+            <HowItWorksSection onNavigate={(p) => handleNavigate(p)} isStandalonePage={true} />
+          )}
+
+          {currentPage === 'plan' && (
+            <PlanYourEventPage 
+              onNavigate={(p) => handleNavigate(p)} 
+              onEnquireWithPlan={handleEnquireWithPlan} 
             />
-            <CuratedMomentsSection onNavigate={handleNavigate} />
-          </div>
-        )}
+          )}
 
-        {currentPage === 'services' && (
-          <ServicesPage onNavigate={handleNavigate} />
-        )}
+          {currentPage === 'vendors' && (
+            <VendorsSection 
+              onNavigate={(p) => handleNavigate(p)} 
+              onSelectVendorForEnquiry={handleSelectVendorForEnquiry}
+              isStandalonePage={true} 
+            />
+          )}
 
-        {currentPage === 'how-it-works' && (
-          <HowItWorksSection onNavigate={handleNavigate} isStandalonePage={true} />
-        )}
+          {currentPage === 'about' && (
+            <AboutPage onNavigate={(p) => handleNavigate(p)} />
+          )}
 
-        {currentPage === 'plan' && (
-          <PlanYourEventPage 
-            onNavigate={handleNavigate} 
-            onEnquireWithPlan={handleEnquireWithPlan} 
-          />
-        )}
+          {currentPage === 'contact' && (
+            <ContactPage 
+              onNavigate={(p) => handleNavigate(p)} 
+              prefillPlan={activePlan} 
+              prefillVendor={selectedVendorForEnquiry} 
+            />
+          )}
 
-        {currentPage === 'vendors' && (
-          <VendorsSection 
-            onNavigate={handleNavigate} 
-            onSelectVendorForEnquiry={handleSelectVendorForEnquiry}
-            isStandalonePage={true} 
-          />
-        )}
+          {/* Dedicated MOMENTA Login Page */}
+          {currentPage === 'login' && (
+            <LoginPage
+              onNavigate={(p) => handleNavigate(p)}
+              successMessage={loginSuccessMessage}
+            />
+          )}
 
-        {currentPage === 'about' && (
-          <AboutPage onNavigate={handleNavigate} />
-        )}
+          {/* Dedicated MOMENTA Sign Up Page */}
+          {currentPage === 'signup' && (
+            <SignUpPage
+              onNavigate={(p, msg) => handleNavigate(p, msg)}
+            />
+          )}
 
-        {currentPage === 'contact' && (
-          <ContactPage 
-            onNavigate={handleNavigate} 
-            prefillPlan={activePlan} 
-            prefillVendor={selectedVendorForEnquiry} 
-          />
-        )}
-      </main>
+          {/* Dedicated Protected MOMENTA Host Dashboard */}
+          {currentPage === 'dashboard' && (
+            <UserDashboard
+              onNavigate={(p) => handleNavigate(p)}
+            />
+          )}
+        </main>
 
-      {/* Sophisticated Warm Dark Footer */}
-      <Footer onNavigate={handleNavigate} />
+        {/* Sophisticated Warm Dark Footer */}
+        <Footer onNavigate={(p) => handleNavigate(p)} />
+      </div>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }

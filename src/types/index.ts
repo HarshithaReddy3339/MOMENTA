@@ -1,4 +1,25 @@
-export type NavigationPage = 'home' | 'services' | 'how-it-works' | 'plan' | 'vendors' | 'about' | 'contact';
+export type NavigationPage = 
+  | 'home' 
+  | 'services' 
+  | 'how-it-works' 
+  | 'plan' 
+  | 'vendors' 
+  | 'about' 
+  | 'contact'
+  | 'login'
+  | 'signup'
+  | 'dashboard';
+
+export interface UserProfile {
+  uid: string;
+  name: string;
+  email: string;
+  phoneNumber?: string;
+  profilePhoto?: string;
+  createdAt: string;
+  lastLoginAt: string;
+  authProvider: 'google' | 'password' | 'google+password';
+}
 
 export type EventType = 
   | 'Wedding Celebration'

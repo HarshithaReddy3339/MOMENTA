@@ -14,6 +14,7 @@ import {
   CheckCircle2, Printer, Share2, Star, Coins,
   Clock, HeartHandshake, Sliders
 } from 'lucide-react';
+import { PersonalizeEventModal } from './PersonalizeEventModal';
 
 interface PlanYourEventPageProps {
   onNavigate: (page: NavigationPage) => void;
@@ -27,6 +28,7 @@ export const PlanYourEventPage: React.FC<PlanYourEventPageProps> = ({
   // Wizard Step: 1, 2, 3, or 'dashboard'
   const [currentStep, setCurrentStep] = useState<number | 'dashboard'>(1);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const [isAIModalOpen, setIsAIModalOpen] = useState<boolean>(false);
 
   // Step 1: Details
   const [details, setDetails] = useState<EventDetailsForm>({
@@ -731,6 +733,32 @@ export const PlanYourEventPage: React.FC<PlanYourEventPageProps> = ({
           </p>
         </div>
 
+        {/* Featured AI Quick Entry Callout */}
+        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[#FAF0E8] via-[#FFF6F0] to-[#FAF0E8] border border-[#F2DDD0] flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left shadow-2xs">
+          <div className="flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-full bg-[#FDEEE7] text-[#D96035] flex items-center justify-center shrink-0 shadow-2xs">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-[#261F1D] flex items-center justify-center sm:justify-start gap-1.5">
+                <span>Personalize Your Event</span>
+                <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-[#FDEEE7] text-[#D96035]">AI Powered</span>
+              </p>
+              <p className="text-xs text-[#7A6B63] mt-0.5">
+                Tell us your vision, and let MOMENTA create a personalized event experience for you.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsAIModalOpen(true)}
+            className="shrink-0 px-5 py-2.5 rounded-full bg-[#D96035] hover:bg-[#C94E25] text-white text-xs font-semibold uppercase tracking-wider transition-all duration-200 cursor-pointer shadow-xs hover:shadow-sm flex items-center gap-2"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>✨ Personalize Your Event</span>
+          </button>
+        </div>
+
         {/* Step Indicator Bar */}
         <div className="flex items-center justify-between relative px-2 sm:px-6">
           <div className="absolute top-5 left-8 right-8 h-[2px] bg-[#E5D7CB] -z-0" />
@@ -1200,8 +1228,48 @@ export const PlanYourEventPage: React.FC<PlanYourEventPageProps> = ({
             </div>
           )}
 
+          {/* Section 5 & 15: Prominent Personalize Your Event Entry Card */}
+          <div className="pt-6 border-t border-[#E5D7CB] space-y-4">
+            <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-[#FAF0E8] via-[#FFF7F2] to-[#FAF0E8] border border-[#F3C5AE] shadow-xs flex flex-col md:flex-row items-center justify-between gap-6">
+              <div className="space-y-2 text-center md:text-left">
+                <div className="inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-widest text-[#D96035] font-semibold">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>AI Personalization</span>
+                </div>
+                <h3 className="font-serif text-2xl sm:text-3xl font-bold text-[#261F1D]">
+                  ✨ Personalize Your Event
+                </h3>
+                <p className="text-xs sm:text-sm text-[#665751] max-w-lg leading-relaxed">
+                  Tell MOMENTA what you have in mind and create a personalized event experience.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsAIModalOpen(true)}
+                className="shrink-0 px-8 py-3.5 rounded-full bg-[#D96035] hover:bg-[#C94E25] text-white text-xs uppercase font-semibold tracking-wider transition-all duration-200 cursor-pointer shadow-md hover:shadow-lg flex items-center gap-2"
+              >
+                <Sparkles className="w-4 h-4" />
+                <span>Personalize with AI</span>
+              </button>
+            </div>
+          </div>
+
         </div>
       </div>
+
+      {/* AI Personalization Modal Interface */}
+      <PersonalizeEventModal
+        isOpen={isAIModalOpen}
+        onClose={() => setIsAIModalOpen(false)}
+        onApplyPlan={(visionSummary) => {
+          setPreferences((prev) => ({
+            ...prev,
+            specialRequests: visionSummary
+          }));
+        }}
+        onEnquireWithPlan={onEnquireWithPlan}
+      />
     </div>
   );
 };

@@ -19,17 +19,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onNavigate }) => {
           
           {/* Left Column: Heading, Copy, Actions */}
           <div className="lg:col-span-7 space-y-8">
-            {/* Elegant Kicker */}
-            <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.25em] text-[#D96035]">
-              <Sparkles className="w-3.5 h-3.5 text-[#D96035]" />
-              <span>Personalized Event Orchestration</span>
-            </div>
-
             {/* Display Heading */}
             <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl text-[#261F1D] leading-[1.12] tracking-tight text-balance">
               Your Vision.<br />
-              Our Planning.<br />
-              <span className="italic font-normal text-[#C94E25]">Moments Worth Remembering.</span>
+              Our Planning.
             </h1>
 
             {/* Sub-description */}

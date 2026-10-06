@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { NavigationPage, ContactFormData, EventPlan, Vendor } from '../../types';
-import { Mail, Phone, MapPin, Send, CheckCircle2, Instagram, Facebook, Linkedin, Clock } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, CheckCircle2, Instagram, Facebook, Linkedin, Clock, AlertCircle } from 'lucide-react';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { db, auth } from '../../lib/firebase';
+import { useAuth } from '../../context/AuthContext';
 
 interface ContactPageProps {
   onNavigate: (page: NavigationPage) => void;
@@ -12,6 +15,8 @@ export const ContactPage: React.FC<ContactPageProps> = ({
   prefillPlan,
   prefillVendor
 }) => {
+  const { user, profile } = useAuth();
+
   const [formData, setFormData] = useState<ContactFormData>({
     fullName: '',
     email: '',
@@ -21,8 +26,27 @@ export const ContactPage: React.FC<ContactPageProps> = ({
     message: ''
   });
 
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
-  const [referenceId, setReferenceId] = useState<string>('');
+  const [submissionDate, setSubmissionDate] = useState<string>('');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [validationErrors, setValidationErrors] = useState<{
+    fullName?: string;
+    email?: string;
+    message?: string;
+  }>({});
+
+  // Auto-fill logged-in user credentials if available and fields are empty
+  useEffect(() => {
+    if (user && !formData.fullName && !formData.email) {
+      setFormData((prev) => ({
+        ...prev,
+        fullName: profile?.name || user.displayName || prev.fullName,
+        email: user.email || prev.email,
+        phone: profile?.phoneNumber || prev.phone
+      }));
+    }
+  }, [user, profile]);
 
   useEffect(() => {
     if (prefillPlan) {
@@ -40,11 +64,83 @@ export const ContactPage: React.FC<ContactPageProps> = ({
     }
   }, [prefillPlan, prefillVendor]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const ref = `MQ-${Math.floor(10000 + Math.random() * 90000)}`;
-    setReferenceId(ref);
-    setIsSubmitted(true);
+    if (isSubmitting) return; // Prevent duplicate submissions
+
+    const trimmedName = formData.fullName.trim();
+    const trimmedEmail = formData.email.trim();
+    const trimmedMessage = formData.message.trim();
+
+    // Validation
+    const errors: { fullName?: string; email?: string; message?: string } = {};
+
+    if (!trimmedName) {
+      errors.fullName = 'Full Name is required.';
+    } else if (/\d/.test(trimmedName)) {
+      errors.fullName = 'Full Name must not contain numbers.';
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!trimmedEmail) {
+      errors.email = 'Email Address is required.';
+    } else if (!emailRegex.test(trimmedEmail)) {
+      errors.email = 'Please enter a valid email address.';
+    }
+
+    if (!trimmedMessage) {
+      errors.message = 'Message must not be empty.';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      return;
+    }
+
+    setValidationErrors({});
+    setErrorMessage(null);
+    setIsSubmitting(true);
+
+    try {
+      // Retrieve currently authenticated Firebase user uid, or null for guests
+      const currentUserId = auth.currentUser?.uid || user?.uid || null;
+
+      // Save to Cloud Firestore in contact_submissions collection
+      await addDoc(collection(db, 'contact_submissions'), {
+        name: trimmedName,
+        email: trimmedEmail,
+        message: trimmedMessage,
+        userId: currentUserId,
+        phone: formData.phone.trim(),
+        eventType: formData.eventType,
+        eventDate: formData.eventDate,
+        submittedAt: serverTimestamp()
+      });
+
+      // Format submission date as DD/MM/YYYY for application display
+      const now = new Date();
+      const dd = String(now.getDate()).padStart(2, '0');
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
+      const yyyy = now.getFullYear();
+      setSubmissionDate(`${dd}/${mm}/${yyyy}`);
+
+      // Section 7: Clear Name, Email, Message and show success
+      setIsSubmitted(true);
+      setFormData({
+        fullName: '',
+        email: '',
+        phone: '',
+        eventType: 'Wedding Celebration',
+        eventDate: '2026-11-20',
+        message: ''
+      });
+    } catch (error) {
+      console.error('[MOMENTA Contact Submission Error]', error);
+      // Section 8: Display exact failure message without clearing user entered inputs
+      setErrorMessage('Something went wrong. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -187,16 +283,15 @@ export const ContactPage: React.FC<ContactPageProps> = ({
                     <CheckCircle2 className="w-8 h-8" />
                   </div>
 
-                  <div className="space-y-2 max-w-md mx-auto">
-                    <span className="text-xs font-mono uppercase tracking-widest text-[#D96035]">
-                      Enquiry Received · Ref {referenceId}
-                    </span>
+                  <div className="space-y-3 max-w-md mx-auto">
                     <h3 className="font-serif text-3xl font-bold text-[#261F1D]">
-                      Thank You, {formData.fullName || 'Valued Guest'}
+                      Thank you! We received your message and we'll get back to you soon.
                     </h3>
-                    <p className="text-sm text-[#665751] leading-relaxed">
-                      Your event vision has been assigned to a MOMENTA Senior Planning Director. We will review your date ({new Date(formData.eventDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}) and respond within 24 hours.
-                    </p>
+                    {submissionDate && (
+                      <p className="text-xs font-mono uppercase tracking-widest text-[#7C6A61]">
+                        Submitted on {submissionDate}
+                      </p>
+                    )}
                   </div>
 
                   <div className="pt-4">
@@ -204,14 +299,8 @@ export const ContactPage: React.FC<ContactPageProps> = ({
                       type="button"
                       onClick={() => {
                         setIsSubmitted(false);
-                        setFormData({
-                          fullName: '',
-                          email: '',
-                          phone: '',
-                          eventType: 'Wedding Celebration',
-                          eventDate: '2026-11-20',
-                          message: ''
-                        });
+                        setErrorMessage(null);
+                        setValidationErrors({});
                       }}
                       className="px-6 py-2.5 rounded-full border border-[#D5C6BA] text-xs font-semibold text-[#5A4D46] hover:bg-[#F2E8DE] transition-colors cursor-pointer"
                     >
@@ -230,6 +319,14 @@ export const ContactPage: React.FC<ContactPageProps> = ({
                     </p>
                   </div>
 
+                  {/* Submission Error Banner */}
+                  {errorMessage && (
+                    <div className="p-4 rounded-xl bg-[#FFF5F5] border border-[#FED7D7] text-xs text-[#C53030] flex items-center gap-2.5 animate-in fade-in duration-200">
+                      <AlertCircle className="w-4 h-4 shrink-0 text-[#E53E3E]" />
+                      <span>{errorMessage}</span>
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div className="space-y-1.5">
                       <label className="block text-xs uppercase font-mono tracking-wider text-[#695B54]">
@@ -239,10 +336,23 @@ export const ContactPage: React.FC<ContactPageProps> = ({
                         type="text"
                         required
                         value={formData.fullName}
-                        onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                        onChange={(e) => {
+                          setFormData({ ...formData, fullName: e.target.value });
+                          if (validationErrors.fullName) {
+                            setValidationErrors((prev) => ({ ...prev, fullName: undefined }));
+                          }
+                        }}
                         placeholder="e.g. Ananya Rao"
-                        className="w-full px-4 py-3 rounded-xl bg-[#FAF7F2] border border-[#EDE2D8] text-sm text-[#261F1D] focus:outline-hidden focus:border-[#D96035]"
+                        className={`w-full px-4 py-3 rounded-xl bg-[#FAF7F2] border text-sm text-[#261F1D] focus:outline-hidden ${
+                          validationErrors.fullName ? 'border-[#E53E3E] bg-[#FFF5F5]' : 'border-[#EDE2D8] focus:border-[#D96035]'
+                        }`}
                       />
+                      {validationErrors.fullName && (
+                        <p className="text-[11px] text-[#C53030] flex items-center gap-1 pt-0.5">
+                          <AlertCircle className="w-3 h-3 shrink-0" />
+                          <span>{validationErrors.fullName}</span>
+                        </p>
+                      )}
                     </div>
 
                     <div className="space-y-1.5">
@@ -253,21 +363,33 @@ export const ContactPage: React.FC<ContactPageProps> = ({
                         type="email"
                         required
                         value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        onChange={(e) => {
+                          setFormData({ ...formData, email: e.target.value });
+                          if (validationErrors.email) {
+                            setValidationErrors((prev) => ({ ...prev, email: undefined }));
+                          }
+                        }}
                         placeholder="ananya@example.com"
-                        className="w-full px-4 py-3 rounded-xl bg-[#FAF7F2] border border-[#EDE2D8] text-sm text-[#261F1D] focus:outline-hidden focus:border-[#D96035]"
+                        className={`w-full px-4 py-3 rounded-xl bg-[#FAF7F2] border text-sm text-[#261F1D] focus:outline-hidden ${
+                          validationErrors.email ? 'border-[#E53E3E] bg-[#FFF5F5]' : 'border-[#EDE2D8] focus:border-[#D96035]'
+                        }`}
                       />
+                      {validationErrors.email && (
+                        <p className="text-[11px] text-[#C53030] flex items-center gap-1 pt-0.5">
+                          <AlertCircle className="w-3 h-3 shrink-0" />
+                          <span>{validationErrors.email}</span>
+                        </p>
+                      )}
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div className="space-y-1.5">
                       <label className="block text-xs uppercase font-mono tracking-wider text-[#695B54]">
-                        Phone Number *
+                        Phone Number
                       </label>
                       <input
                         type="tel"
-                        required
                         value={formData.phone}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                         placeholder="+91 98490 00000"
@@ -309,23 +431,44 @@ export const ContactPage: React.FC<ContactPageProps> = ({
 
                   <div className="space-y-1.5">
                     <label className="block text-xs uppercase font-mono tracking-wider text-[#695B54]">
-                      Your Message or Vision Notes
+                      Your Message or Vision Notes *
                     </label>
                     <textarea
                       rows={4}
+                      required
                       value={formData.message}
-                      onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                      onChange={(e) => {
+                        setFormData({ ...formData, message: e.target.value });
+                        if (validationErrors.message) {
+                          setValidationErrors((prev) => ({ ...prev, message: undefined }));
+                        }
+                      }}
                       placeholder="Share details on guest count, aesthetic preferences, catering desires or specific questions..."
-                      className="w-full px-4 py-3 rounded-xl bg-[#FAF7F2] border border-[#EDE2D8] text-sm text-[#261F1D] focus:outline-hidden focus:border-[#D96035]"
+                      className={`w-full px-4 py-3 rounded-xl bg-[#FAF7F2] border text-sm text-[#261F1D] focus:outline-hidden ${
+                        validationErrors.message ? 'border-[#E53E3E] bg-[#FFF5F5]' : 'border-[#EDE2D8] focus:border-[#D96035]'
+                      }`}
                     />
+                    {validationErrors.message && (
+                      <p className="text-[11px] text-[#C53030] flex items-center gap-1 pt-0.5">
+                        <AlertCircle className="w-3 h-3 shrink-0" />
+                        <span>{validationErrors.message}</span>
+                      </p>
+                    )}
                   </div>
 
                   <button
                     type="submit"
-                    className="w-full py-4 rounded-full bg-[#D96035] hover:bg-[#C94E25] text-white text-xs uppercase font-semibold tracking-wider transition-colors cursor-pointer shadow-sm flex items-center justify-center gap-2"
+                    disabled={isSubmitting}
+                    className="w-full py-4 rounded-full bg-[#D96035] hover:bg-[#C94E25] text-white text-xs uppercase font-semibold tracking-wider transition-colors cursor-pointer shadow-sm flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
                   >
-                    <span>Send Enquiry</span>
-                    <Send className="w-3.5 h-3.5" />
+                    {isSubmitting ? (
+                      <span>Sending Message...</span>
+                    ) : (
+                      <>
+                        <span>Send Enquiry</span>
+                        <Send className="w-3.5 h-3.5" />
+                      </>
+                    )}
                   </button>
 
                   <p className="text-[11px] text-center text-[#8C7B73]">
