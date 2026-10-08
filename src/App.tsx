@@ -15,6 +15,7 @@ import { ContactPage } from './components/contact/ContactPage';
 import { LoginPage } from './components/auth/LoginPage';
 import { SignUpPage } from './components/auth/SignUpPage';
 import { UserDashboard } from './components/dashboard/UserDashboard';
+import { KnowledgeBaseProvider } from './context/KnowledgeBaseContext';
 
 function AppContent() {
   const { user, profile, loading, logout } = useAuth();
@@ -198,7 +199,9 @@ function AppContent() {
 export default function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <KnowledgeBaseProvider>
+        <AppContent />
+      </KnowledgeBaseProvider>
     </AuthProvider>
   );
 }

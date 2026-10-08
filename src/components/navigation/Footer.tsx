@@ -85,14 +85,6 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
               </li>
               <li>
                 <button
-                  onClick={() => handleNav('how-it-works')}
-                  className="hover:text-white transition-colors cursor-pointer"
-                >
-                  How It Works
-                </button>
-              </li>
-              <li>
-                <button
                   onClick={() => handleNav('vendors')}
                   className="hover:text-white transition-colors cursor-pointer"
                 >

@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import { 
   Sparkles, X, ArrowRight, CheckCircle2, AlertCircle, RefreshCw, 
   MapPin, Utensils, Music, Camera, Users, Wallet, Calendar, 
-  HelpCircle, Lightbulb, ChevronRight, Send, Check
+  HelpCircle, Lightbulb, ChevronRight, Send, Check, BookOpen 
 } from 'lucide-react';
 import { 
   generatePersonalizedPlan, 
   PersonalizedEventPlanResult 
 } from '../../services/aiPersonalizationService';
 import { EventPlan } from '../../types';
+import { useKnowledgeBase } from '../../context/KnowledgeBaseContext';
 
 interface PersonalizeEventModalProps {
   isOpen: boolean;

@@ -12,9 +12,10 @@ import { EventImage } from '../common/EventImage';
 import { 
   Calendar, MapPin, Users, Sparkles, Check, ArrowRight, ArrowLeft, 
   CheckCircle2, Printer, Share2, Star, Coins,
-  Clock, HeartHandshake, Sliders
+  Clock, HeartHandshake, Sliders, BookOpen
 } from 'lucide-react';
 import { PersonalizeEventModal } from './PersonalizeEventModal';
+import { KnowledgeBaseUploadArea } from './KnowledgeBaseUploadArea';
 
 interface PlanYourEventPageProps {
   onNavigate: (page: NavigationPage) => void;
@@ -734,13 +735,13 @@ export const PlanYourEventPage: React.FC<PlanYourEventPageProps> = ({
         </div>
 
         {/* Featured AI Quick Entry Callout */}
-        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[#FAF0E8] via-[#FFF6F0] to-[#FAF0E8] border border-[#F2DDD0] flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left shadow-2xs">
-          <div className="flex items-center gap-3.5">
+        <div className="p-6 sm:p-7 rounded-3xl bg-gradient-to-r from-[#FAF0E8] via-[#FFF6F0] to-[#FAF0E8] border border-[#F2DDD0] space-y-5 shadow-2xs">
+          <div className="flex items-start sm:items-center gap-3.5">
             <div className="w-10 h-10 rounded-full bg-[#FDEEE7] text-[#D96035] flex items-center justify-center shrink-0 shadow-2xs">
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-xs font-semibold text-[#261F1D] flex items-center justify-center sm:justify-start gap-1.5">
+              <p className="text-sm font-semibold text-[#261F1D] flex items-center gap-2">
                 <span>Personalize Your Event</span>
                 <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-[#FDEEE7] text-[#D96035]">AI Powered</span>
               </p>
@@ -749,14 +750,35 @@ export const PlanYourEventPage: React.FC<PlanYourEventPageProps> = ({
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => setIsAIModalOpen(true)}
-            className="shrink-0 px-5 py-2.5 rounded-full bg-[#D96035] hover:bg-[#C94E25] text-white text-xs font-semibold uppercase tracking-wider transition-all duration-200 cursor-pointer shadow-xs hover:shadow-sm flex items-center gap-2"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>✨ Personalize Your Event</span>
-          </button>
+
+          {/* Knowledge Base Upload Area ABOVE the button */}
+          <div className="p-4 sm:p-5 rounded-2xl bg-white/80 border border-[#EDE2D8] space-y-2">
+            <div className="flex items-center gap-2">
+              <BookOpen className="w-4 h-4 text-[#D96035]" />
+              <h4 className="font-serif font-bold text-sm text-[#261F1D]">
+                Build Your Knowledge Base
+              </h4>
+            </div>
+            <p className="text-xs text-[#6E615B] leading-relaxed">
+              Upload event-planning knowledge to help MOMENTA personalize recommendations using your own information.
+            </p>
+            <KnowledgeBaseUploadArea />
+          </div>
+
+          {/* Action Row */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
+            <p className="text-xs text-[#7A6B63] italic">
+              Ready to generate your custom event blueprint?
+            </p>
+            <button
+              type="button"
+              onClick={() => setIsAIModalOpen(true)}
+              className="w-full sm:w-auto px-6 py-3 rounded-full bg-[#D96035] hover:bg-[#C94E25] text-white text-xs font-semibold uppercase tracking-wider transition-all duration-200 cursor-pointer shadow-xs hover:shadow-sm flex items-center justify-center gap-2"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>✨ Personalize Your Event</span>
+            </button>
+          </div>
         </div>
 
         {/* Step Indicator Bar */}
@@ -1227,33 +1249,6 @@ export const PlanYourEventPage: React.FC<PlanYourEventPageProps> = ({
               </div>
             </div>
           )}
-
-          {/* Section 5 & 15: Prominent Personalize Your Event Entry Card */}
-          <div className="pt-6 border-t border-[#E5D7CB] space-y-4">
-            <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-[#FAF0E8] via-[#FFF7F2] to-[#FAF0E8] border border-[#F3C5AE] shadow-xs flex flex-col md:flex-row items-center justify-between gap-6">
-              <div className="space-y-2 text-center md:text-left">
-                <div className="inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-widest text-[#D96035] font-semibold">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>AI Personalization</span>
-                </div>
-                <h3 className="font-serif text-2xl sm:text-3xl font-bold text-[#261F1D]">
-                  ✨ Personalize Your Event
-                </h3>
-                <p className="text-xs sm:text-sm text-[#665751] max-w-lg leading-relaxed">
-                  Tell MOMENTA what you have in mind and create a personalized event experience.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setIsAIModalOpen(true)}
-                className="shrink-0 px-8 py-3.5 rounded-full bg-[#D96035] hover:bg-[#C94E25] text-white text-xs uppercase font-semibold tracking-wider transition-all duration-200 cursor-pointer shadow-md hover:shadow-lg flex items-center gap-2"
-              >
-                <Sparkles className="w-4 h-4" />
-                <span>Personalize with AI</span>
-              </button>
-            </div>
-          </div>
 
         </div>
       </div>

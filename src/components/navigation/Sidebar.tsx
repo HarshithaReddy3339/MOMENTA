@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { NavigationPage } from '../../types';
 import { 
-  Menu, X, User, LogOut, LayoutDashboard, Home, Sparkles, 
+  Menu, X, User, LogOut, LayoutDashboard, Home,
   Layers, Calendar, Compass, Info, Mail, LogIn, UserPlus 
 } from 'lucide-react';
 
@@ -20,12 +20,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-  // Exact 8 items in the exact required vertical order
+  // Exact required vertical order without 'How It Works'
   const navLinks: { label: string; page: NavigationPage; icon: React.ElementType }[] = [
     { label: 'Home', page: 'home', icon: Home },
     { label: 'Services', page: 'services', icon: Layers },
     { label: 'Plan Your Event', page: 'plan', icon: Calendar },
-    { label: 'How It Works', page: 'how-it-works', icon: Sparkles },
     { label: 'Vendors', page: 'vendors', icon: Compass },
     { label: 'About', page: 'about', icon: Info },
     { label: 'Contact', page: 'contact', icon: Mail },
